@@ -1,0 +1,1 @@
+ALTER TABLE "jsonForms" ADD COLUMN "enabledSignIn" boolean DEFAULT false;

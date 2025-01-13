@@ -1,0 +1,1 @@
+ALTER TABLE "jsonForms" DROP COLUMN "enabledSignIn";
