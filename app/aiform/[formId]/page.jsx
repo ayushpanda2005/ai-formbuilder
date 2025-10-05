@@ -9,15 +9,19 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function LiveAiForm() {
-  const params = useParams();         // 👈 get params from App Router
-  const formId = params.formId;       // 👈 extract formId
+  const params = useParams();          
+  const formId = params?.formId;       // 👈 extract formId safely
   const [record, setRecord] = useState(null);
   const [jsonForm, setJsonForm] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (formId) {
+      console.log("Received formId:", formId);
       GetFormData(formId);
+    } else {
+      console.error("No formId found in params:", params);
+      setIsLoading(false);
     }
   }, [formId]);
 
@@ -30,6 +34,7 @@ export default function LiveAiForm() {
     }
 
     try {
+      console.log("Fetching data for ID:", id);
       const result = await db
         .select()
         .from(JsonForms)
@@ -38,12 +43,21 @@ export default function LiveAiForm() {
       if (result.length > 0) {
         const rawJson = result[0]?.jsonform;
         if (rawJson) {
-          const parsedJson = JSON.parse(
-            rawJson.replace(/```json|```/g, "").trim()
-          );
-          setRecord(result[0]);
-          setJsonForm(parsedJson);
+          try {
+            const parsedJson = JSON.parse(
+              rawJson.replace(/```json|```/g, "").trim()
+            );
+            setRecord(result[0]);
+            setJsonForm(parsedJson);
+            console.log("Loaded form:", parsedJson);
+          } catch (parseErr) {
+            console.error("Error parsing JSON form:", parseErr);
+          }
+        } else {
+          console.warn("No jsonform field found in DB row:", result[0]);
         }
+      } else {
+        console.warn("No record found for ID:", id);
       }
     } catch (error) {
       console.error("Error fetching form data:", error);
@@ -55,9 +69,7 @@ export default function LiveAiForm() {
   return (
     <div
       className="p-10 flex justify-center items-center"
-      style={{
-        backgroundImage: record?.background,
-      }}
+      style={{ backgroundImage: record?.background }}
     >
       {isLoading ? (
         <p>Loading form data...</p>
