@@ -1,31 +1,27 @@
-"use client";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import FormUi from "@/app/edit-form/_components/FormUi";
 import { db } from "@/configs";
 import { JsonForms } from "@/configs/schema";
 import { eq } from "drizzle-orm";
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 
-function LiveAiForm({ params }) {
-  const [record, setRecord] = useState(null); // Store record from DB
-  const [jsonForm, setJsonForm] = useState(null); // Store parsed JSON form
-  const [isLoading, setIsLoading] = useState(true); // Loading state
+export default function LiveAiForm() {
+  const router = useRouter();
+  const { formid } = router.query;  // <-- dynamic param from URL
+  const [record, setRecord] = useState(null);
+  const [jsonForm, setJsonForm] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  if (params?.formId) {
-    console.log("Received params:", params); // Debug params
-    GetFormData(params.formId);
-  } else {
-    console.error("Params are missing or invalid:", params);
-    setIsLoading(false);
-  }
-}, [params]);
-
+    if (formid) {
+      GetFormData(formid);
+    }
+  }, [formid]);
 
   const GetFormData = async (formIdString) => {
-    const formId = parseInt(formIdString, 10); // Ensure formId is parsed as a number
-
+    const formId = parseInt(formIdString, 10);
     if (isNaN(formId)) {
       console.error("Invalid form ID:", formIdString);
       setIsLoading(false);
@@ -33,33 +29,20 @@ function LiveAiForm({ params }) {
     }
 
     try {
-      console.log("Fetching data for form ID:", formId);
       const result = await db
         .select()
         .from(JsonForms)
         .where(eq(JsonForms.id, formId));
 
       if (result.length > 0) {
-        console.log("Database result:", result);
         const rawJson = result[0]?.jsonform;
-
         if (rawJson) {
-          try {
-            const parsedJson = JSON.parse(
-              rawJson.replace(/```json|```/g, "").trim()
-            );
-
-            setRecord(result[0]);
-            setJsonForm(parsedJson);
-            console.log("Parsed JSON form:", parsedJson);
-          } catch (parseError) {
-            console.error("Error parsing JSON form:", parseError);
-          }
-        } else {
-          console.error("No `jsonform` found in database result:", result);
+          const parsedJson = JSON.parse(
+            rawJson.replace(/```json|```/g, "").trim()
+          );
+          setRecord(result[0]);
+          setJsonForm(parsedJson);
         }
-      } else {
-        console.error("No data found for the provided form ID.");
       }
     } catch (error) {
       console.error("Error fetching form data:", error);
@@ -83,15 +66,13 @@ function LiveAiForm({ params }) {
             jsonForm={jsonForm}
             onFieldUpdate={() => console.log("Field updated")}
             deleteField={() => console.log("Field deleted")}
-            selectedStyle={JSON.parse(record?.style || "{}")} // Safely access `style`
-            selectedTheme={record?.theme || "default"} // Safely access `theme`
+            selectedStyle={JSON.parse(record?.style || "{}")}
+            selectedTheme={record?.theme || "default"}
             editable={false}
             formId={record.id}
             enabledSignIn={record?.enabledSignIn}
           />
-
-
-          <Link href="http://localhost:3000/">
+          <Link href="/">
             <div
               className="flex gap-2 items-center bg-black text-white px-3 py-1 
               rounded-full fixed bottom-5 left-5 cursor-pointer"
@@ -107,5 +88,3 @@ function LiveAiForm({ params }) {
     </div>
   );
 }
-
-export default LiveAiForm;
