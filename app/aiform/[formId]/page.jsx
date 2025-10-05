@@ -1,4 +1,5 @@
-import { useRouter } from "next/router";
+"use client";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import FormUi from "@/app/edit-form/_components/FormUi";
 import { db } from "@/configs";
@@ -8,21 +9,21 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function LiveAiForm() {
-  const router = useRouter();
-  const { formid } = router.query;  // <-- dynamic param from URL
+  const params = useParams();         // 👈 get params from App Router
+  const formId = params.formId;       // 👈 extract formId
   const [record, setRecord] = useState(null);
   const [jsonForm, setJsonForm] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (formid) {
-      GetFormData(formid);
+    if (formId) {
+      GetFormData(formId);
     }
-  }, [formid]);
+  }, [formId]);
 
   const GetFormData = async (formIdString) => {
-    const formId = parseInt(formIdString, 10);
-    if (isNaN(formId)) {
+    const id = parseInt(formIdString, 10);
+    if (isNaN(id)) {
       console.error("Invalid form ID:", formIdString);
       setIsLoading(false);
       return;
@@ -32,7 +33,7 @@ export default function LiveAiForm() {
       const result = await db
         .select()
         .from(JsonForms)
-        .where(eq(JsonForms.id, formId));
+        .where(eq(JsonForms.id, id));
 
       if (result.length > 0) {
         const rawJson = result[0]?.jsonform;
@@ -88,3 +89,4 @@ export default function LiveAiForm() {
     </div>
   );
 }
+
